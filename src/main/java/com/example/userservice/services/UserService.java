@@ -91,4 +91,12 @@ public class UserService {
         tokenRepository.save(deletedToken);
         return;
     }
+
+    public User validateToken(String tokenValue) throws InvalidTokenExcpetion {
+        Optional<Token> optionalToken = tokenRepository.findByValueAndDeleted(tokenValue, false);
+        if (optionalToken.isEmpty()){
+            throw new InvalidTokenExcpetion("Invalid Token");
+        }
+        return optionalToken.get().getUser();
+    }
 }
