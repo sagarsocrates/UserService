@@ -18,9 +18,9 @@ import java.util.Optional;
 @Service
 public class UserService {
 
-    private UserRepository userRepository;
-    private BCryptPasswordEncoder bCryptPasswordEncoder;
-    private TokenRepository tokenRepository;
+    private final UserRepository userRepository;
+    private final BCryptPasswordEncoder bCryptPasswordEncoder;
+    private final TokenRepository tokenRepository;
 
     UserService(UserRepository userRepository, BCryptPasswordEncoder bCryptPasswordEncoder, TokenRepository tokenRepository) {
         this.userRepository = userRepository;
@@ -89,7 +89,6 @@ public class UserService {
         Token deletedToken = optionalToken.get();
         deletedToken.setDeleted(true);
         tokenRepository.save(deletedToken);
-        return;
     }
 
     public User validateToken(String tokenValue) throws InvalidTokenExcpetion {
