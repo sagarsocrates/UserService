@@ -56,4 +56,11 @@ public class UserController {
         User user = userService.validateToken(token);
         return UserDto.from(user);
     }
+
+    //Testing service discovery, product service calling user service via eureka
+    @RequestMapping("/{id}")
+    public String getUserDetails(@PathVariable("id") Long userId){
+        System.out.println("Got request from product service");
+        return "Hello from user service with id: " + userId;
+    }
 }
