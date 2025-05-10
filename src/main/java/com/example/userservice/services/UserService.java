@@ -1,11 +1,15 @@
 package com.example.userservice.services;
 
+import com.example.userservice.configs.KafkaProducerClient;
+import com.example.userservice.dto.SendEmailDto;
 import com.example.userservice.exception.InvalidPasswordExcpetion;
 import com.example.userservice.exception.InvalidTokenExcpetion;
 import com.example.userservice.models.Token;
 import com.example.userservice.models.User;
 import com.example.userservice.repositories.TokenRepository;
 import com.example.userservice.repositories.UserRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -21,11 +25,16 @@ public class UserService {
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
     private final TokenRepository tokenRepository;
+    private final KafkaProducerClient kafkaProducerClient;
+    private final ObjectMapper objectMapper;
 
-    UserService(UserRepository userRepository, BCryptPasswordEncoder bCryptPasswordEncoder, TokenRepository tokenRepository) {
+    UserService(UserRepository userRepository, BCryptPasswordEncoder bCryptPasswordEncoder, TokenRepository tokenRepository,
+                KafkaProducerClient kafkaProducerClient, ObjectMapper objectMapper) {
         this.userRepository = userRepository;
         this.bCryptPasswordEncoder = bCryptPasswordEncoder;
         this.tokenRepository = tokenRepository;
+        this.kafkaProducerClient = kafkaProducerClient;
+        this.objectMapper = objectMapper;
     }
 
     public User signUp(String email, String password, String name){
@@ -40,6 +49,17 @@ public class UserService {
         user.setHashedPassword(bCryptPasswordEncoder.encode(password));
 
         User savedUser = userRepository.save(user);
+        //Once the signup is completed, send kafka event
+        SendEmailDto sendEmailDto = new SendEmailDto();
+        sendEmailDto.setTo(savedUser.getEmail());
+        sendEmailDto.setSubject("New User");
+        sendEmailDto.setBody("Thanks for joining the course");
+        sendEmailDto.setFrom("sagarsocrates22@gmail.com");
+        try{
+            kafkaProducerClient.sendMessage("sendEmail",objectMapper.writeValueAsString(sendEmailDto));
+        } catch (JsonProcessingException e) {
+            System.out.println("Something went wrong while sending mail" + e.getMessage());
+        }
         return savedUser;
     }
 
